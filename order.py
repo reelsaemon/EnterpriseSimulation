@@ -9,6 +9,7 @@ class Order:
         self.orderPriority = order_priority
         self.stationPlan = station_plan  # planned stations that have to be executed before the order is finished
         self.stationLog = []  # list of stations that were visited during the lifetime of the order
+        self.meanPerformanceLog = []  # list of mean performance for each station visited throughout the process
         self.resourceLog = []  # list of resources that worked on the order during the lifetime of the order
         self.durationLog = []  # list of durations at stations that were visited during the lifetime of the order
         self.waitingTimeLog = [0]  # list of waiting times in front of stations during the lifetime of the order
@@ -17,6 +18,8 @@ class Order:
         self.idleAtStation = False
         self.orderComplete = False
         self.initTime = init_time
+        self.stationStartWorkingTimes = []  # list of times when stations are entered and the order is being worked
+        self.stationEndWorkingTimes = []  # list of times when stations are left after the order was being worked
 
         self.currentStation = None
         self.currentResource = None
@@ -58,6 +61,10 @@ class Order:
         self.currentStation = None
         self.currentResource = None
         self.currentStationDuration = None
+
+        # calculate mean station performance during process at station
+
+
         if self.orderComplete is False:
             self.waitingTimeLog.append(0)
         return
@@ -125,6 +132,15 @@ class Order:
 
     def getCurrentStationDuration(self):
         return self.currentStationDuration
+
+    def getStationStartWorkingTimes(self):
+        return self.stationStartWorkingTimes
+
+    def getStationEndWorkingTimes(self):
+        return self.stationEndWorkingTimes
+
+    def getMeanPerformanceLog(self):
+        return self.meanPerformanceLog
 
     # def setWaitingTime(self, amount):
     #     self.waitingTime = amount

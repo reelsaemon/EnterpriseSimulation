@@ -10,6 +10,7 @@ class Station:
 
         self.performance = 1
         self.available = True
+        self.performanceLog = []
 
 
     def setAvailability(self, availability):
@@ -35,3 +36,11 @@ class Station:
     def decreasePerformance(self, adjustment):
         self.performance -= adjustment
         return
+
+    def recordPerformance(self, performance_value):
+        self.performanceLog.append(performance_value)
+        return
+
+    def getPerformanceLog(self):
+        return self.performanceLog
+

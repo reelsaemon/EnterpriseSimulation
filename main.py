@@ -61,6 +61,10 @@ def simulate(sim_env):
 
         idle_at_station_orders.sort(key=lambda x: x.getOrderPriority())
 
+        # record station performance each iteration
+        for station in sim_env.stations:
+            station.recordPerformance(station.getPerformance())
+
         # assign idle at station orders, i.e. orders waiting at stations
         if len(idle_at_station_orders) > 0:
             for order in idle_at_station_orders:
@@ -137,6 +141,10 @@ def simulate(sim_env):
                                                                                                                  0.05))
                         order.setCurrentStationDuration(individual_duration)
 
+                    # record first working time at the station
+                    if order.getDurationLog()[len(order.getStationLog())-1] == 0:
+                        order.getStationStartWorkingTimes().append(sim_env.timeManager.getTime())
+
                     # record cycle times
                     order.incrementDuration(order.getCurrentStation(), 1)
                     # adjust station performance due to station usage - check if station has below zero performance
@@ -146,6 +154,15 @@ def simulate(sim_env):
 
                     # check if stations finish their task in this iteration
                     if order.checkDuration(order.currentStation) >= order.getCurrentStationDuration():
+
+                        # record mean performance at station
+                        order.getStationEndWorkingTimes().append(sim_env.timeManager.getTime())
+                        workstart = order.getStationStartWorkingTimes()[-1]
+                        workend = sim_env.timeManager.getTime()
+                        meanPerformance = sum(
+                            order.getCurrentStation().getPerformanceLog()[workstart:workend]) /(workend - workstart)
+                        order.getMeanPerformanceLog().append(meanPerformance)
+
                         # send order to idle pool waiting for the next station of the order
                         # leave current station as attribute for purposes of waiting time recording
                         # if current station of the order is the last in the station plan send to completed orders
@@ -194,6 +211,7 @@ def generate_event_log(simulated_enterprise):
         order_dict[order.getOrderName()] = {'count': len(order.getStationLog()),
                                             'init_time': order.getInitTime(),
                                             'stations': order.getStationLog(),
+                                            'mean_performances': order.getMeanPerformanceLog(),
                                             'resources': order.getResourceLog(),
                                             'waiting_times': order.getWaitingTimeLog(),
                                             'waiting_times_at_stations': order.getWaitingTimeAtStationLog(),
@@ -203,7 +221,10 @@ def generate_event_log(simulated_enterprise):
     order_col = np.concatenate([np.repeat(entry, order_dict.get(entry).get('count')) for entry in order_dict])
     station_col = [station.getStationName() for station in
                    np.concatenate([order_dict.get(entry).get('stations') for entry in order_dict])]
+    mean_performance_col = np.concatenate([order_dict.get(entry).get('mean_performances') for entry in order_dict])
     resource_col = [resource.getResourceName() for resource in
+                    np.concatenate([order_dict.get(entry).get('resources') for entry in order_dict])]
+    productivity_col = [resource.getResourceProductivity() for resource in
                     np.concatenate([order_dict.get(entry).get('resources') for entry in order_dict])]
     waiting_time_col = np.concatenate([order_dict.get(entry).get('waiting_times') for entry in order_dict])
     waiting_time_at_stations_col = np.concatenate([order_dict.get(entry).get('waiting_times_at_stations')
@@ -258,7 +279,9 @@ def generate_event_log(simulated_enterprise):
     # make DataFrame from all columns
     log_frame = pd.DataFrame([order_col,
                               station_col,
+                              mean_performance_col,
                               resource_col,
+                              productivity_col,
                               waiting_time_col,
                               waiting_time_at_stations_col,
                               duration_col,
@@ -270,7 +293,9 @@ def generate_event_log(simulated_enterprise):
     # assign meaningful column names
     log_frame.columns = ["order_id",
                          "station",
+                         "mean_performance",
                          "resource",
+                         "resource_productivity",
                          "waiting_time",
                          "waiting_time_at_station",
                          "duration",
@@ -312,7 +337,7 @@ if __name__ == '__main__':
     # productivities of different resources
     RESOURCE_PRODUCTIVITIES = [0.75, 0.8, 0.8, 0.9, 1, 1, 1.2, 1.2, 1.5, 1.5]
     # total simulation duration in seconds
-    SIM_DURATION = round(0.1 * 60 * 60 * 24)
+    SIM_DURATION = round(1 * 60 * 60 * 24)
     # frequency of order generation per second, i.e. probability per second for generation of order
     ORDER_FREQUENCY = 1/60  # one order per minute
     # number of order priorities
