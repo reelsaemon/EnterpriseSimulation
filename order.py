@@ -57,6 +57,7 @@ class Order:
     def unsetStation(self):
         self.currentStation = None
         self.currentResource = None
+        self.currentStationDuration = None
         if self.orderComplete is False:
             self.waitingTimeLog.append(0)
         return

@@ -312,7 +312,7 @@ if __name__ == '__main__':
     # productivities of different resources
     RESOURCE_PRODUCTIVITIES = [0.75, 0.8, 0.8, 0.9, 1, 1, 1.2, 1.2, 1.5, 1.5]
     # total simulation duration in seconds
-    SIM_DURATION = 1 * 60 * 60 * 24
+    SIM_DURATION = round(0.1 * 60 * 60 * 24)
     # frequency of order generation per second, i.e. probability per second for generation of order
     ORDER_FREQUENCY = 1/60  # one order per minute
     # number of order priorities
