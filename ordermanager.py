@@ -20,15 +20,3 @@ class OrderManager:
         new_order = order.Order(self.orderCount, order_priority, station_plan, init_time)
         self.orderList.append(new_order)
         return
-
-    def getOrderPriorities(self):
-        return self.orderPriorities
-
-    def getOrderFrequency(self):
-        return self.orderFrequency
-
-    def getOrderList(self):
-        return self.orderList
-
-    def getCompletedOrdersList(self):
-        return self.completedOrders

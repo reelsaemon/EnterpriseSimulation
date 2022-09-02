@@ -20,50 +20,50 @@ def simulate(sim_env):
         # simulate one iteration
 
         # # one order
-        # if(sim_env.timeManager.getTime() == 0):
+        # if(sim_env.timeManager.simTime == 0):
         #     plan_probs = np.random.uniform(0, 1, len(sim_env.stations))
         #     current_station_plan = [sim_env.stations[i] for i in range(0, len(sim_env.stations)) if
         #                             plan_probs[i] <= sim_env.stationProbs[i]]
-        #     sim_env.orderManager.generateOrder(np.random.choice(range(1, sim_env.orderManager.getOrderPriorities())),
-        #                                        current_station_plan, sim_env.timeManager.getTime())
+        #     sim_env.orderManager.generateOrder(np.random.choice(range(1, sim_env.orderManager.orderPriorities)),
+        #                                        current_station_plan, sim_env.timeManager.simTime)
 
         # generate new orders
         # roll if order is to be generated this iteration
         # roll for order priority
         # include functionality for shuffling the planned stations (optional)
-        if np.random.uniform() <= sim_env.orderManager.getOrderFrequency():
+        if np.random.uniform() <= sim_env.orderManager.orderFrequency:
             plan_probs = np.random.uniform(0, 1, len(sim_env.stations))
             current_station_plan = [sim_env.stations[i] for i in range(0, len(sim_env.stations)) if
                                     plan_probs[i] <= sim_env.stationProbs[i]]
             if sim_env.shuffleStations is True:
                 current_station_plan = np.random.permutation(current_station_plan)
 
-            sim_env.orderManager.generateOrder(np.random.choice(range(1, sim_env.orderManager.getOrderPriorities())),
-                                               current_station_plan, sim_env.timeManager.getTime())
+            sim_env.orderManager.generateOrder(np.random.choice(range(1, sim_env.orderManager.orderPriorities)),
+                                               current_station_plan, sim_env.timeManager.simTime)
 
         # manage orders
         # check available stations
-        available_stations = [s for s in sim_env.stations if s.getAvailability() is True]
+        available_stations = [s for s in sim_env.stations if s.available is True]
 
         # check available resources
-        available_resources = [r for r in sim_env.resources if r.getAvailability() is True]
+        available_resources = [r for r in sim_env.resources if r.available is True]
 
         # check for idle orders
-        idle_orders = [o for o in sim_env.orderManager.getOrderList() if
-                       o.getIdleStatus() is True and o.getCompleteStatus() is False]
+        idle_orders = [o for o in sim_env.orderManager.orderList if
+                       o.idle is True and o.orderComplete is False]
 
         # sort idle orders according to priority
-        idle_orders.sort(key=lambda x: x.getOrderPriority())
+        idle_orders.sort(key=lambda x: x.orderPriority)
 
         # check for idle at machine orders
-        idle_at_station_orders = [o for o in sim_env.orderManager.getOrderList() if
-                                  o.getIdleAtStationStatus() is True and o.getCompleteStatus() is False]
+        idle_at_station_orders = [o for o in sim_env.orderManager.orderList if
+                                  o.idleAtStation is True and o.orderComplete is False]
 
-        idle_at_station_orders.sort(key=lambda x: x.getOrderPriority())
+        idle_at_station_orders.sort(key=lambda x: x.orderPriority)
 
         # record station performance each iteration
         for station in sim_env.stations:
-            station.recordPerformance(station.getPerformance())
+            station.performanceLog.append(station.performance)
 
         # assign idle at station orders, i.e. orders waiting at stations
         if len(idle_at_station_orders) > 0:
@@ -73,14 +73,14 @@ def simulate(sim_env):
                     # let order wait at the desired station if no resource is available
                     # else assign resource to order
                     chosen_resource = np.random.choice(available_resources)
-                    chosen_resource.setAvailability(False)
+                    chosen_resource.available = False
                     order.setResource(chosen_resource)
 
                     # remove this resource from list of available resources
                     available_resources.pop(available_resources.index(chosen_resource))
 
                     # set idle at station status to false for this order
-                    order.setIdleAtStationStatus(False)
+                    order.idleAtStation = False
 
         # assign orders
         if len(idle_orders) > 0:
@@ -89,111 +89,111 @@ def simulate(sim_env):
                 # check if planned next station is available
                 if len(available_stations) > 0 and next_station in available_stations:
                     # assign current order to the desired station
-                    available_stations[available_stations.index(next_station)].setAvailability(False)
+                    available_stations[available_stations.index(next_station)].available = False
                     order.setStation(available_stations[available_stations.index(next_station)])
-                    order.setIdleStatus(False)
+                    order.idle = False
 
                     # remove this station from list of available stations
                     available_stations.pop(available_stations.index(next_station))
 
-                if order.getCurrentStation() is not None and len(available_resources) == 0:
+                if order.currentStation is not None and len(available_resources) == 0:
                     # let order wait at the desired station if no resource is available
-                    order.setIdleAtStationStatus(True)
-                elif order.getCurrentStation() is not None:
+                    order.idleAtStation = True
+                elif order.currentStation is not None:
                     chosen_resource = np.random.choice(available_resources)
-                    chosen_resource.setAvailability(False)
+                    chosen_resource.available = False
                     order.setResource(chosen_resource)
 
                     # remove this resource from list of available resources
                     available_resources.pop(available_resources.index(chosen_resource))
 
                     # set idle at station status to false for this order
-                    order.setIdleAtStationStatus(False)
+                    order.idleAtStation = False
 
         # work on the orders at stations with the assigned resources,
         # i.e. increment durations, set available or remain unavailable
         # stations and resources that are finishing orders in one iteration
         # are set to available but can start working only in the next iteration
 
-        if len(sim_env.orderManager.getOrderList()) > 0:
-            for order in sim_env.orderManager.getOrderList():
+        if len(sim_env.orderManager.orderList) > 0:
+            for order in sim_env.orderManager.orderList:
 
-                if order.getIdleStatus() is True:
+                if order.idle is True:
                     # record waiting times (in front of stations)
-                    order.incrementWaitingTime(order.getNextStation(), 1)
-                elif order.getIdleAtStationStatus() is True:
+                    order.waitingTimeLog[order.stationPlan.index(order.getNextStation())] += 1
+                elif order.idleAtStation is True:
                     # record waiting times at stations
-                    order.incrementWaitingTimeAtStation(order.getCurrentStation(), 1)
-                elif order.getIdleStatus() is False \
-                        and order.getIdleAtStationStatus() is False \
-                        and order.getCompleteStatus() is False:
+                    order.waitingTimeAtStationLog[order.stationPlan.index(order.getNextStation())] += 1
+                elif order.idle is False \
+                        and order.idleAtStation is False \
+                        and order.orderComplete is False:
 
                     # for testing if a station finishes their task the duration baseline is needed
                     # (and needs to be adjusted to introduce some variance)
                     # this is calculated once when the order is first processed at a station with a certain resource
-                    if order.getCurrentStationDuration() is None:
-                        baseline_duration = order.getCurrentStation().getDurationBaseline()
-                        resource_productivity = order.getCurrentResource().getResourceProductivity()
-                        station_performance = order.getCurrentStation().getPerformance()
+                    if order.currentStationDuration is None:
+                        baseline_duration = order.currentStation.durationBaseline
+                        resource_productivity = order.currentResource.resourceProductivity
+                        station_performance = order.currentStation.performance
 
                         individual_duration = round(
                             (baseline_duration / resource_productivity / station_performance) * np.random.normal(1,
                                                                                                                  0.05))
-                        order.setCurrentStationDuration(individual_duration)
+                        order.currentStationDuration = individual_duration
 
                     # record first working time at the station
-                    if order.getDurationLog()[len(order.getStationLog())-1] == 0:
-                        order.getStationStartWorkingTimes().append(sim_env.timeManager.getTime())
+                    if order.durationLog[len(order.stationLog)-1] == 0:
+                        order.stationStartWorkingTimes.append(sim_env.timeManager.simTime)
 
                     # record cycle times
-                    order.incrementDuration(order.getCurrentStation(), 1)
+                    order.durationLog[order.stationPlan.index(order.currentStation)] += 1
                     # adjust station performance due to station usage - check if station has below zero performance
-                    order.getCurrentStation().decreasePerformance(np.random.uniform(0, sim_env.maxDegradationPerPeriod))
-                    if order.getCurrentStation().getPerformance() < 0:
-                        order.getCurrentStation().setPerformance(0)
+                    order.currentStation.performance -= np.random.uniform(0, sim_env.maxDegradationPerPeriod)
+                    if order.currentStation.performance < 0:
+                        order.currentStation.performance = 0
 
                     # check if stations finish their task in this iteration
-                    if order.checkDuration(order.currentStation) >= order.getCurrentStationDuration():
+                    if order.durationLog[order.stationLog.index(order.currentStation)] >= order.currentStationDuration:
 
                         # record mean performance at station
-                        order.getStationEndWorkingTimes().append(sim_env.timeManager.getTime())
-                        workstart = order.getStationStartWorkingTimes()[-1]
-                        workend = sim_env.timeManager.getTime()
-                        meanPerformance = sum(
-                            order.getCurrentStation().getPerformanceLog()[workstart:workend]) /(workend - workstart)
-                        order.getMeanPerformanceLog().append(meanPerformance)
+                        order.stationEndWorkingTimes.append(sim_env.timeManager.simTime)
+                        workstart = order.stationStartWorkingTimes[-1]
+                        workend = sim_env.timeManager.simTime
+                        mean_performance = sum(
+                            order.currentStation.performanceLog[workstart:workend]) /(workend - workstart)
+                        order.meanPerformanceLog.append(mean_performance)
 
                         # send order to idle pool waiting for the next station of the order
                         # leave current station as attribute for purposes of waiting time recording
                         # if current station of the order is the last in the station plan send to completed orders
-                        if len(order.getStationPlan()) == len(order.getStationLog()):
+                        if len(order.stationPlan) == len(order.stationLog):
                             # orders with completeStatus == True remain in the order pool
                             # but are not assigned to stations or resources as they are neither idle nor idleAtMachine
                             # free resources and stations
-                            order.getCurrentStation().setAvailability(True)
-                            order.getCurrentResource().setAvailability(True)
+                            order.currentStation.available = True
+                            order.currentResource.available = True
 
-                            order.setCompleteStatus(True)
+                            order.orderComplete = True
                             order.unsetStation()
 
-                            sim_env.orderManager.getCompletedOrdersList().append(order)
-                            sim_env.orderManager.getOrderList().pop(sim_env.orderManager.getOrderList().index(order))
+                            sim_env.orderManager.completedOrders.append(order)
+                            sim_env.orderManager.orderList.pop(sim_env.orderManager.orderList.index(order))
                         else:
                             # free resources and stations
                             # set idle status for order
-                            order.getCurrentStation().setAvailability(True)
-                            order.getCurrentResource().setAvailability(True)
+                            order.currentStation.available = True
+                            order.currentResource.available = True
 
                             order.unsetStation()
-                            order.setIdleStatus(True)
+                            order.idle = True
 
         # maintain stations when maintenance interval is reached (after all orders are worked on)
-        if sim_env.timeManager.getTime() % sim_env.maintenanceInterval == 0:
+        if sim_env.timeManager.simTime % sim_env.maintenanceInterval == 0:
             for station in sim_env.stations:
-                station.setPerformance(1)
+                station.performance = 1
 
         # increment simulation time
-        sim_env.timeManager.setTime(sim_env.timeManager.getTime() + 1)
+        sim_env.timeManager.simTime += 1
 
     print("...done!")
     return
@@ -204,28 +204,28 @@ def generate_event_log(simulated_enterprise):
     print("Generating event log...", end='')
 
     # form event log from all complete orders
-    complete_orders = simulated_enterprise.orderManager.getCompletedOrdersList()
+    complete_orders = simulated_enterprise.orderManager.completedOrders
 
     order_dict = {}
     for order in complete_orders:
-        order_dict[order.getOrderName()] = {'count': len(order.getStationLog()),
-                                            'init_time': order.getInitTime(),
-                                            'stations': order.getStationLog(),
-                                            'mean_performances': order.getMeanPerformanceLog(),
-                                            'resources': order.getResourceLog(),
-                                            'waiting_times': order.getWaitingTimeLog(),
-                                            'waiting_times_at_stations': order.getWaitingTimeAtStationLog(),
-                                            'durations': order.getDurationLog()}
+        order_dict[order.orderName] = {'count': len(order.stationLog),
+                                       'init_time': order.initTime,
+                                       'stations': order.stationLog,
+                                       'mean_performances': order.meanPerformanceLog,
+                                       'resources': order.resourceLog,
+                                       'waiting_times': order.waitingTimeLog,
+                                       'waiting_times_at_stations': order.waitingTimeAtStationLog,
+                                       'durations': order.durationLog}
 
     # fill the columns for the data frame
     order_col = np.concatenate([np.repeat(entry, order_dict.get(entry).get('count')) for entry in order_dict])
-    station_col = [station.getStationName() for station in
+    station_col = [station.stationName for station in
                    np.concatenate([order_dict.get(entry).get('stations') for entry in order_dict])]
     mean_performance_col = np.concatenate([order_dict.get(entry).get('mean_performances') for entry in order_dict])
-    resource_col = [resource.getResourceName() for resource in
+    resource_col = [resource.resourceName for resource in
                     np.concatenate([order_dict.get(entry).get('resources') for entry in order_dict])]
-    productivity_col = [resource.getResourceProductivity() for resource in
-                    np.concatenate([order_dict.get(entry).get('resources') for entry in order_dict])]
+    productivity_col = [resource.resourceProductivity for resource in
+                        np.concatenate([order_dict.get(entry).get('resources') for entry in order_dict])]
     waiting_time_col = np.concatenate([order_dict.get(entry).get('waiting_times') for entry in order_dict])
     waiting_time_at_stations_col = np.concatenate([order_dict.get(entry).get('waiting_times_at_stations')
                                                    for entry in order_dict])
@@ -337,7 +337,7 @@ if __name__ == '__main__':
     # productivities of different resources
     RESOURCE_PRODUCTIVITIES = [0.75, 0.8, 0.8, 0.9, 1, 1, 1.2, 1.2, 1.5, 1.5]
     # total simulation duration in seconds
-    SIM_DURATION = round(1 * 60 * 60 * 24)
+    SIM_DURATION = round(7 * 60 * 60 * 24)
     # frequency of order generation per second, i.e. probability per second for generation of order
     ORDER_FREQUENCY = 1/60  # one order per minute
     # number of order priorities

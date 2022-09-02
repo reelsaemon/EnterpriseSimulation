@@ -25,12 +25,6 @@ class Order:
         self.currentResource = None
         self.currentStationDuration = None
 
-    def getOrderName(self):
-        return self.orderName
-
-    def getStationPlan(self):
-        return self.stationPlan
-
     def getNextStation(self):
         # check stationLog
         # which station is the next one?
@@ -38,12 +32,6 @@ class Order:
             return self.stationPlan[0]
         else:
             return self.stationPlan[self.stationPlan.index(self.stationLog[-1]) + 1]
-
-    def getCurrentStation(self):
-        return self.currentStation
-
-    def getCurrentResource(self):
-        return self.currentResource
 
     def setResource(self, resource):
         self.resourceLog.append(resource)
@@ -62,94 +50,6 @@ class Order:
         self.currentResource = None
         self.currentStationDuration = None
 
-        # calculate mean station performance during process at station
-
-
         if self.orderComplete is False:
             self.waitingTimeLog.append(0)
         return
-
-    def setIdleStatus(self, idle_status):
-        self.idle = idle_status
-        return
-
-    def setIdleAtStationStatus(self, idle_at_station_status):
-        self.idleAtStation = idle_at_station_status
-        return
-
-    def getIdleStatus(self):
-        return self.idle
-
-    def getIdleAtStationStatus(self):
-        return self.idleAtStation
-
-    def getOrderPriority(self):
-        return self.orderPriority
-
-    def checkDuration(self, station):
-        return self.durationLog[self.stationLog.index(station)]
-
-    def incrementDuration(self, station, amount):
-        self.durationLog[self.stationLog.index(station)] += amount
-        return
-
-    def incrementWaitingTime(self, station, amount):
-        self.waitingTimeLog[self.stationPlan.index(station)] += amount
-        return
-
-    def incrementWaitingTimeAtStation(self, station, amount):
-        self.waitingTimeAtStationLog[self.stationLog.index(station)] += amount
-        return
-
-    def getCompleteStatus(self):
-        return self.orderComplete
-
-    def setCompleteStatus(self, complete_status):
-        self.orderComplete = complete_status
-        return
-
-    def getStationLog(self):
-        return self.stationLog
-
-    def getResourceLog(self):
-        return self.resourceLog
-
-    def getDurationLog(self):
-        return self.durationLog
-
-    def getWaitingTimeLog(self):
-        return self.waitingTimeLog
-
-    def getWaitingTimeAtStationLog(self):
-        return self.waitingTimeAtStationLog
-
-    def getInitTime(self):
-        return self.initTime
-
-    def setCurrentStationDuration(self, value):
-        self.currentStationDuration = value
-        return
-
-    def getCurrentStationDuration(self):
-        return self.currentStationDuration
-
-    def getStationStartWorkingTimes(self):
-        return self.stationStartWorkingTimes
-
-    def getStationEndWorkingTimes(self):
-        return self.stationEndWorkingTimes
-
-    def getMeanPerformanceLog(self):
-        return self.meanPerformanceLog
-
-    # def setWaitingTime(self, amount):
-    #     self.waitingTime = amount
-    #
-    # def getWaitingTime(self):
-    #     return self.waitingTime
-    #
-    # def setWaitingTimeAtStations(self, amount):
-    #     self.waitingTimeAtStations = amount
-    #
-    # def getWaitingTimeAtStations(self):
-    #     return self.waitingTimeAtStations

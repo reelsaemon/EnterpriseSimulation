@@ -9,12 +9,3 @@ class TimeManager:
         self.simDuration = sim_duration
 
         self.simTime = 0  # counter variable for simulation time
-
-    def getTime(self):
-        return self.simTime
-
-    def setTime(self, amount):
-        self.simTime = amount
-
-    def getSimDuration(self):
-        return self.simDuration
