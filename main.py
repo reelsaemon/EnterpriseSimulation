@@ -4,6 +4,15 @@
 # with different activities/process steps that depend on some
 # process variables that are modelled individually for each activity
 
+#Todo
+# - find a smart way to prioritize orders (otherwise low priority orders are in a deadlock if bottlenecks occur
+#   and new orders with higher priorities are taking over
+#   maybe raise priority with waiting time or find another way to prioritize orders
+#   planned duration generated at the beginning?
+#   does the simulation need waiting pools for each station?
+# - find a way to reset bottlenecks somehow
+#   (not for cases which are obviously always inducing bottlenecks, e.g. new order every second)
+
 import enterprise
 import numpy as np
 import pandas as pd
@@ -123,7 +132,7 @@ def simulate(sim_env):
                     order.waitingTimeLog[order.stationPlan.index(order.getNextStation())] += 1
                 elif order.idleAtStation is True:
                     # record waiting times at stations
-                    order.waitingTimeAtStationLog[order.stationPlan.index(order.getNextStation())] += 1
+                    order.waitingTimeAtStationLog[order.stationPlan.index(order.currentStation)] += 1
                 elif order.idle is False \
                         and order.idleAtStation is False \
                         and order.orderComplete is False:
@@ -337,9 +346,9 @@ if __name__ == '__main__':
     # productivities of different resources
     RESOURCE_PRODUCTIVITIES = [0.75, 0.8, 0.8, 0.9, 1, 1, 1.2, 1.2, 1.5, 1.5]
     # total simulation duration in seconds
-    SIM_DURATION = round(7 * 60 * 60 * 24)
+    SIM_DURATION = round(1 * 60 * 60 * 24)
     # frequency of order generation per second, i.e. probability per second for generation of order
-    ORDER_FREQUENCY = 1/60  # one order per minute
+    ORDER_FREQUENCY = 1/(60*3)  # one order every three minutes
     # number of order priorities
     ORDER_PRIORITIES = 5
     # loops in execution allowed? ---not implemented yet---
