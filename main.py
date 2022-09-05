@@ -6,12 +6,15 @@
 
 #Todo
 # - find a smart way to prioritize orders (otherwise low priority orders are in a deadlock if bottlenecks occur
-#   and new orders with higher priorities are taking over
+#   and new orders with higher priorities are taking over)
 #   maybe raise priority with waiting time or find another way to prioritize orders
 #   planned duration generated at the beginning?
 #   does the simulation need waiting pools for each station?
+#   --> all orders have priority and time to deadline variables
+#   --> sorting works by time to deadline first and then priority
+#   --> order with longer tenure are picked first, priority is only second criterion
 # - find a way to reset bottlenecks somehow
-#   (not for cases which are obviously always inducing bottlenecks, e.g. new order every second)
+#   (not for configurations which are obviously always inducing bottlenecks, e.g. new order every second)
 
 import enterprise
 import numpy as np
@@ -61,14 +64,15 @@ def simulate(sim_env):
         idle_orders = [o for o in sim_env.orderManager.orderList if
                        o.idle is True and o.orderComplete is False]
 
-        # sort idle orders according to priority
-        idle_orders.sort(key=lambda x: x.orderPriority)
+        # sort idle orders according to remaining time to deadline (according to station plan) and priority
+        idle_orders.sort(key=lambda x: (x.timeToDeadline, x.orderPriority))
 
         # check for idle at machine orders
         idle_at_station_orders = [o for o in sim_env.orderManager.orderList if
                                   o.idleAtStation is True and o.orderComplete is False]
 
-        idle_at_station_orders.sort(key=lambda x: x.orderPriority)
+        # sort idle at station orders according to remaining time to deadline (according to station plan) and priority
+        idle_at_station_orders.sort(key=lambda x: (x.timeToDeadline, x.orderPriority))
 
         # record station performance each iteration
         for station in sim_env.stations:
@@ -126,6 +130,9 @@ def simulate(sim_env):
 
         if len(sim_env.orderManager.orderList) > 0:
             for order in sim_env.orderManager.orderList:
+
+                # deduct one time period from time to deadline for the order
+                order.timeToDeadline -= 1
 
                 if order.idle is True:
                     # record waiting times (in front of stations)

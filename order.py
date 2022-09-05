@@ -24,6 +24,7 @@ class Order:
         self.currentStation = None
         self.currentResource = None
         self.currentStationDuration = None
+        self.timeToDeadline = sum([station.durationBaseline for station in self.stationPlan])
 
     def getNextStation(self):
         # check stationLog
