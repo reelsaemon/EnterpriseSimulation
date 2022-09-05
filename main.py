@@ -213,6 +213,13 @@ def simulate(sim_env):
         sim_env.resourcesAvailable.append(len([resource for resource in sim_env.resources if resource.available is True]))
         sim_env.existingOrders.append(len([order for order in sim_env.orderManager.orderList]))
 
+        # record availabilities of stations and resources per iteration
+        for station in sim_env.stations:
+            station.availabilityLog.append(station.available)
+
+        for resource in sim_env.resources:
+            resource.availabilityLog.append(resource.available)
+
         #Todo
         # - record orders waiting in front of/before stations?
         # - record place in waiting line for each order in each iteration?
@@ -344,6 +351,14 @@ def generate_enterprise_log(simulated_enterprise):
     resources_available_col = simulated_enterprise.resourcesAvailable
     existing_orders_col = simulated_enterprise.existingOrders
 
+    station_dict = {}
+    for station in simulated_enterprise.stations:
+        station_dict[station.stationName] = station.availabilityLog
+
+    resource_dict = {}
+    for resource in simulated_enterprise.resources:
+        resource_dict[resource.resourceName] = resource.availabilityLog
+
     # make DataFrame from all columns
     enterprise_log_frame = pd.DataFrame([timestamp_col,
                                          stations_available_col,
@@ -355,6 +370,13 @@ def generate_enterprise_log(simulated_enterprise):
                                     "stations_available",
                                     "resources_available",
                                     "existing_orders"]
+
+    for entry in station_dict:
+        enterprise_log_frame["station_" + str(entry) + "_available"] = station_dict[entry]
+
+    for entry in resource_dict:
+        enterprise_log_frame["resource_" + str(entry) + "_available"] = resource_dict[entry]
+
     print("done!")
     return enterprise_log_frame
 
@@ -420,7 +442,7 @@ if __name__ == '__main__':
     # execution probabilities of activities
     STATION_PROBS = [1, 1, 0.8, 0.5, 1, 0.75, 0.8, 0.5, 1, 1]
     # duration baselines for each individual station in seconds
-    STATION_DURATIONS = [600, 1020, 120, 60, 600, 3000, 300, 600, 1200, 60]
+    STATION_DURATIONS = [100, 200, 20, 60, 300, 500, 300, 100, 250, 60]
     # shuffle the stations for each order after stations are planned?
     SHUFFLE_STATIONS = False
     # how often are stations maintained?
@@ -428,13 +450,13 @@ if __name__ == '__main__':
     # how fast are stations degrading due to usage - max performance is 1, i.e. 100%
     MAX_DEGRADATION_PER_PERIOD = 1/MAINTENANCE_INTERVAL
     # number of available resources to work at stations
-    RESOURCE_COUNT = 8
+    RESOURCE_COUNT = 4
     # productivities of different resources
     RESOURCE_PRODUCTIVITIES = [0.75, 0.8, 0.8, 0.9, 1, 1, 1.2, 1.2, 1.5, 1.5]
     # total simulation duration in seconds
     SIM_DURATION = round(1 * 60 * 60 * 24)
     # frequency of order generation per second, i.e. probability per second for generation of order
-    ORDER_FREQUENCY = 1/(60*3)  # one order every three minutes
+    ORDER_FREQUENCY = 1/(60*10)  # one order every ten minutes
     # number of order priorities
     ORDER_PRIORITIES = 5
     # loops in execution allowed? ---not implemented yet---

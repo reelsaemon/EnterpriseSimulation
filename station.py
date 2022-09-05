@@ -10,4 +10,5 @@ class Station:
 
         self.performance = 1
         self.available = True
+        self.availabilityLog = []
         self.performanceLog = []
