@@ -358,9 +358,54 @@ def generate_enterprise_log(simulated_enterprise):
     print("done!")
     return enterprise_log_frame
 
-def export_log(log, filename):
+def generate_parameter_frame(simulated_enterprise):
+    print("Generating simulation parameters...", end='')
+
+    # form enterprise log
+    # fill the columns for the data frame
+    station_names = [station.stationName for station in simulated_enterprise.stations]
+    station_duration_baselines = [station.durationBaseline for station in simulated_enterprise.stations]
+    station_execution_probabilities = [station.executionProb for station in simulated_enterprise.stations]
+
+    resource_names = [resource.resourceName for resource in simulated_enterprise.resources]
+    resource_productivities = [resource.resourceProductivity for resource in simulated_enterprise.resources]
+
+    # make DataFrame from columns
+    station_frame = pd.DataFrame([station_names,
+                                  station_duration_baselines,
+                                  station_execution_probabilities]).transpose()
+
+    # make DataFrame from columns
+    resource_frame = pd.DataFrame([resource_names,
+                                   resource_productivities]).transpose()
+
+    # assign meaningful column names
+    station_frame.columns = ["station_name",
+                             "station_duration_baseline",
+                             "station_execution_probability"]
+
+    resource_frame.columns = ["resource_name",
+                              "resource_productivity"]
+
+    print("done!")
+    return station_frame, resource_frame
+
+def export_event_log(log, filename):
     print("Exporting event log...", end='')
     log.to_csv(filename, index=False, sep=';')
+    print("done!")
+    return
+
+def export_enterprise_log(log, filename):
+    print("Exporting enterprise log...", end='')
+    log.to_csv(filename, index=False, sep=';')
+    print("done!")
+    return
+
+def export_parameter_frames(station_log, resource_log, station_filename, resource_filename):
+    print("Exporting enterprise parameters...", end='')
+    station_log.to_csv(station_filename, index=False, sep=';')
+    resource_log.to_csv(resource_filename, index=False, sep=';')
     print("done!")
     return
 
@@ -422,12 +467,18 @@ if __name__ == '__main__':
     event_log = generate_event_log(sim_enterprise)
 
     # export the generated event log for the simulation
-    export_log(event_log, "export/sim_event_log.csv")
+    export_event_log(event_log, "export/sim_event_log.csv")
 
     # generate the enterprise log with occupations per iteration
     enterprise_log = generate_enterprise_log(sim_enterprise)
 
     # export the generated enterprise log for the simulation
-    export_log(enterprise_log, "export/sim_enterprise_log.csv")
+    export_enterprise_log(enterprise_log, "export/sim_enterprise_log.csv")
+
+    # generate DataFrame of station and resource parameters
+    station_frame, resource_frame = generate_parameter_frame(sim_enterprise)
+
+    # export generated parameter DataFrame
+    export_parameter_frames(station_frame, resource_frame, "export/stations.csv", "export/resources.csv")
 
     print("Simulation and data export completed! Have fun with your simulated process data (■_■¬)")
