@@ -208,6 +208,17 @@ def simulate(sim_env):
             for station in sim_env.stations:
                 station.performance = 1
 
+        # record the enterprise variables per iteration
+        sim_env.stationsAvailable.append(len([station for station in sim_env.stations if station.available is True]))
+        sim_env.resourcesAvailable.append(len([resource for resource in sim_env.resources if resource.available is True]))
+        sim_env.existingOrders.append(len([order for order in sim_env.orderManager.orderList]))
+
+        #Todo
+        # - record orders waiting in front of/before stations?
+        # - record place in waiting line for each order in each iteration?
+        # might be very complicated to export to an event log
+        # place in line at start of waiting period for that activity/station? orders to be processed before me
+
         # increment simulation time
         sim_env.timeManager.simTime += 1
 
@@ -293,42 +304,65 @@ def generate_event_log(simulated_enterprise):
     timestamp_out_col = [datetime.fromtimestamp(start_time + timestamp) for timestamp in timestamp_out_col]
 
     # make DataFrame from all columns
-    log_frame = pd.DataFrame([order_col,
-                              station_col,
-                              mean_performance_col,
-                              resource_col,
-                              productivity_col,
-                              waiting_time_col,
-                              waiting_time_at_stations_col,
-                              duration_col,
-                              timestamp_in_col,
-                              timestamp_at_station_col,
-                              timestamp_start_work_col,
-                              timestamp_out_col]).transpose()
+    event_log_frame = pd.DataFrame([order_col,
+                                    station_col,
+                                    mean_performance_col,
+                                    resource_col,
+                                    productivity_col,
+                                    waiting_time_col,
+                                    waiting_time_at_stations_col,
+                                    duration_col,
+                                    timestamp_in_col,
+                                    timestamp_at_station_col,
+                                    timestamp_start_work_col,
+                                    timestamp_out_col]).transpose()
 
     # assign meaningful column names
-    log_frame.columns = ["order_id",
-                         "station",
-                         "mean_performance",
-                         "resource",
-                         "resource_productivity",
-                         "waiting_time",
-                         "waiting_time_at_station",
-                         "duration",
-                         "timestamp_in",
-                         "timestamp_at_station",
-                         "timestamp_start_work",
-                         "timestamp_out"]
+    event_log_frame.columns = ["order_id",
+                               "station",
+                               "mean_performance",
+                               "resource",
+                               "resource_productivity",
+                               "waiting_time",
+                               "waiting_time_at_station",
+                               "duration",
+                               "timestamp_in",
+                               "timestamp_at_station",
+                               "timestamp_start_work",
+                               "timestamp_out"]
     print("done!")
-    return log_frame
+    return event_log_frame
 
+def generate_enterprise_log(simulated_enterprise):
+    print("Generating enterprise log...", end='')
 
-def export_event_log(log, filename):
+    # form enterprise log
+    # fill the columns for the data frame
+    start_time = datetime.timestamp(datetime(2020, 1, 1, 0, 0, 0, 0))
+    timestamp_col = [datetime.fromtimestamp(start_time + iteration) for iteration in range(0, simulated_enterprise.timeManager.simDuration)]
+    stations_available_col = simulated_enterprise.stationsAvailable
+    resources_available_col = simulated_enterprise.resourcesAvailable
+    existing_orders_col = simulated_enterprise.existingOrders
+
+    # make DataFrame from all columns
+    enterprise_log_frame = pd.DataFrame([timestamp_col,
+                                         stations_available_col,
+                                         resources_available_col,
+                                         existing_orders_col]).transpose()
+
+    # assign meaningful column names
+    enterprise_log_frame.columns = ["timestamp",
+                                    "stations_available",
+                                    "resources_available",
+                                    "existing_orders"]
+    print("done!")
+    return enterprise_log_frame
+
+def export_log(log, filename):
     print("Exporting event log...", end='')
     log.to_csv(filename, index=False, sep=';')
-    print("done!\n")
+    print("done!")
     return
-
 
 if __name__ == '__main__':
 
@@ -388,6 +422,12 @@ if __name__ == '__main__':
     event_log = generate_event_log(sim_enterprise)
 
     # export the generated event log for the simulation
-    export_event_log(event_log, "export/sim_enterprise.csv")
+    export_log(event_log, "export/sim_event_log.csv")
+
+    # generate the enterprise log with occupations per iteration
+    enterprise_log = generate_enterprise_log(sim_enterprise)
+
+    # export the generated enterprise log for the simulation
+    export_log(enterprise_log, "export/sim_enterprise_log.csv")
 
     print("Simulation and data export completed! Have fun with your simulated process data (■_■¬)")

@@ -41,4 +41,8 @@ class Enterprise:
         self.orderManager = ordermanager.OrderManager("OrderManager", order_freq, order_priorities)
         self.shiftManager = shiftmanager.ShiftManager("ShiftManager")
 
+        self.stationsAvailable = []
+        self.resourcesAvailable = []
+        self.existingOrders = []
+
         print("done!")
