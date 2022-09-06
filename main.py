@@ -15,6 +15,11 @@
 #   --> order with longer tenure are picked first, priority is only second criterion
 # - find a way to reset bottlenecks somehow
 #   (not for configurations which are obviously always inducing bottlenecks, e.g. new order every second)
+# - find a better functionality for the planned traces
+#   stations via probabilities are not that smart
+#   simulate traces per process model/petri net?
+# - redesign workflow so that working speed depends on number of resources working on a case?
+#   stations need individual resource pools?
 
 import enterprise
 import numpy as np
@@ -44,14 +49,28 @@ def simulate(sim_env):
         # roll for order priority
         # include functionality for shuffling the planned stations (optional)
         if np.random.uniform() <= sim_env.orderManager.orderFrequency:
-            plan_probs = np.random.uniform(0, 1, len(sim_env.stations))
-            current_station_plan = [sim_env.stations[i] for i in range(0, len(sim_env.stations)) if
-                                    plan_probs[i] <= sim_env.stationProbs[i]]
-            if sim_env.shuffleStations is True:
-                current_station_plan = np.random.permutation(current_station_plan)
+            # if STATION_PROBS are given as global priorities take first chunk of code
+            # Start 1 #
+            # plan_probs = np.random.uniform(0, 1, len(sim_env.stations))
+            # current_station_plan = [sim_env.stations[i] for i in range(0, len(sim_env.stations)) if
+            #                         plan_probs[i] <= sim_env.stationProbs[i]]
+            # if sim_env.shuffleStations is True:
+            #     current_station_plan = np.random.permutation(current_station_plan)
+            #
+            # sim_env.orderManager.generateOrder(np.random.choice(range(1, sim_env.orderManager.orderPriorities)),
+            #                                    current_station_plan, sim_env.timeManager.simTime)
+            # End 1 #
 
+            # Start 2 #
+            next_station = 0
+            current_station_plan = [0]
+            while next_station != len(sim_env.stationProbs) - 1:
+                next_station = np.random.choice(range(0, len(sim_env.stationProbs[next_station])), p=sim_env.stationProbs[next_station])
+                current_station_plan.append(next_station)
+            current_station_plan = [sim_env.stations[i] for i in current_station_plan]
             sim_env.orderManager.generateOrder(np.random.choice(range(1, sim_env.orderManager.orderPriorities)),
                                                current_station_plan, sim_env.timeManager.simTime)
+            # End 2 #
 
         # manage orders
         # check available stations
@@ -63,6 +82,9 @@ def simulate(sim_env):
         # check for idle orders
         idle_orders = [o for o in sim_env.orderManager.orderList if
                        o.idle is True and o.orderComplete is False]
+
+        #Todo
+        # - record place in queue for waiting before station
 
         # sort idle orders according to remaining time to deadline (according to station plan) and priority
         idle_orders.sort(key=lambda x: (x.timeToDeadline, x.orderPriority))
@@ -440,7 +462,17 @@ if __name__ == '__main__':
     # number of different activities
     STATION_COUNT = 10
     # execution probabilities of activities
-    STATION_PROBS = [1, 1, 0.8, 0.5, 1, 0.75, 0.8, 0.5, 1, 1]
+    # STATION_PROBS = [1, 1, 0.8, 0.5, 1, 0.75, 0.8, 0.5, 1, 1]
+    STATION_PROBS = [[0.0, 0.8, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                     [0.0, 0.0, 0.9, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                     [0.0, 0.0, 0.0, 0.4, 0.3, 0.3, 0.0, 0.0, 0.0, 0.0],
+                     [0.0, 0.0, 0.0, 0.0, 0.3, 0.2, 0.4, 0.1, 0.0, 0.0],
+                     [0.0, 0.0, 0.0, 0.0, 0.0, 0.8, 0.2, 0.0, 0.0, 0.0],
+                     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.9, 0.1, 0.0, 0.0],
+                     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.0],
+                     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6, 0.4],
+                     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+                     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
     # duration baselines for each individual station in seconds
     STATION_DURATIONS = [100, 200, 20, 60, 300, 500, 300, 100, 250, 60]
     # shuffle the stations for each order after stations are planned?
@@ -454,7 +486,7 @@ if __name__ == '__main__':
     # productivities of different resources
     RESOURCE_PRODUCTIVITIES = [0.75, 0.8, 0.8, 0.9, 1, 1, 1.2, 1.2, 1.5, 1.5]
     # total simulation duration in seconds
-    SIM_DURATION = round(1 * 60 * 60 * 24)
+    SIM_DURATION = round(7 * 60 * 60 * 24)
     # frequency of order generation per second, i.e. probability per second for generation of order
     ORDER_FREQUENCY = 1/(60*10)  # one order every ten minutes
     # number of order priorities

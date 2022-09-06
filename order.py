@@ -8,19 +8,20 @@ class Order:
         self.orderName = order_name
         self.orderPriority = order_priority
         self.stationPlan = station_plan  # planned stations that have to be executed before the order is finished
+        self.initTime = init_time
+
         self.stationLog = []  # list of stations that were visited during the lifetime of the order
         self.meanPerformanceLog = []  # list of mean performance for each station visited throughout the process
         self.resourceLog = []  # list of resources that worked on the order during the lifetime of the order
         self.durationLog = []  # list of durations at stations that were visited during the lifetime of the order
         self.waitingTimeLog = [0]  # list of waiting times in front of stations during the lifetime of the order
         self.waitingTimeAtStationLog = []  # list of waiting times at stations during the lifetime of the order
+        self.queueLog = [] # list of place in queue when waiting for a certain station
         self.idle = True
         self.idleAtStation = False
         self.orderComplete = False
-        self.initTime = init_time
         self.stationStartWorkingTimes = []  # list of times when stations are entered and the order is being worked
         self.stationEndWorkingTimes = []  # list of times when stations are left after the order was being worked
-
         self.currentStation = None
         self.currentResource = None
         self.currentStationDuration = None
