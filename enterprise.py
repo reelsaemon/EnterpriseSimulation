@@ -2,7 +2,6 @@
 
 import station
 import resource
-import shiftmanager
 import ordermanager
 import timemanager
 
@@ -39,7 +38,6 @@ class Enterprise:
                                             resource_productivities[i]) for i in range(0, n_resources)]
         self.timeManager = timemanager.TimeManager("TimeManager", sim_duration)
         self.orderManager = ordermanager.OrderManager("OrderManager", order_freq, order_priorities)
-        self.shiftManager = shiftmanager.ShiftManager("ShiftManager")
 
         self.stationsAvailable = []
         self.resourcesAvailable = []

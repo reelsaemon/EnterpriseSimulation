@@ -24,6 +24,8 @@
 import enterprise
 import numpy as np
 import pandas as pd
+import json
+import os
 from datetime import datetime
 from tqdm import tqdm
 
@@ -459,6 +461,12 @@ if __name__ == '__main__':
     # SIMULATION PARAMETERS #
     #########################
 
+    config_file="configs/config.json"
+    with open(config_file) as f:
+        params = json.load(f)
+
+    params["MAX_DEGRADATION_PER_PERIOD"] = 1/params["MAINTENANCE_INTERVAL"]
+
     # number of different activities
     STATION_COUNT = 10
     # execution probabilities of activities
@@ -486,7 +494,7 @@ if __name__ == '__main__':
     # productivities of different resources
     RESOURCE_PRODUCTIVITIES = [0.75, 0.8, 0.8, 0.9, 1, 1, 1.2, 1.2, 1.5, 1.5]
     # total simulation duration in seconds
-    SIM_DURATION = round(7 * 60 * 60 * 24)
+    SIM_DURATION = round(1 * 60 * 60 * 24)
     # frequency of order generation per second, i.e. probability per second for generation of order
     ORDER_FREQUENCY = 1/(60*10)  # one order every ten minutes
     # number of order priorities
@@ -500,19 +508,19 @@ if __name__ == '__main__':
 
     # initializing the enterprise for the simulation
     sim_enterprise = enterprise.Enterprise(enterprise_name="Enterprise",
-                                           n_stations=STATION_COUNT,
-                                           station_names=range(0, STATION_COUNT),
-                                           station_probs=STATION_PROBS,
-                                           station_durations=STATION_DURATIONS,
-                                           shuffle_stations=SHUFFLE_STATIONS,
-                                           maintenance_interval=MAINTENANCE_INTERVAL,
-                                           max_degradation_per_period=MAX_DEGRADATION_PER_PERIOD,
-                                           n_resources=RESOURCE_COUNT,
-                                           resource_names=range(0, RESOURCE_COUNT),
-                                           resource_productivities=RESOURCE_PRODUCTIVITIES,
-                                           sim_duration=SIM_DURATION,
-                                           order_freq=ORDER_FREQUENCY,
-                                           order_priorities=ORDER_PRIORITIES)
+                                           n_stations=params["STATION_COUNT"],
+                                           station_names=range(0, params["STATION_COUNT"]),
+                                           station_probs=params["STATION_PROBS"],
+                                           station_durations=params["STATION_DURATIONS"],
+                                           shuffle_stations=params["SHUFFLE_STATIONS"],
+                                           maintenance_interval=params["MAINTENANCE_INTERVAL"],
+                                           max_degradation_per_period=params["MAX_DEGRADATION_PER_PERIOD"],
+                                           n_resources=params["RESOURCE_COUNT"],
+                                           resource_names=range(0, params["RESOURCE_COUNT"]),
+                                           resource_productivities=params["RESOURCE_PRODUCTIVITIES"],
+                                           sim_duration=params["SIM_DURATION"],
+                                           order_freq=params["ORDER_FREQUENCY"],
+                                           order_priorities=params["ORDER_PRIORITIES"])
 
     # run the simulation in the generated enterprise
     simulate(sim_enterprise)
@@ -521,18 +529,18 @@ if __name__ == '__main__':
     event_log = generate_event_log(sim_enterprise)
 
     # export the generated event log for the simulation
-    export_event_log(event_log, "export/sim_event_log.csv")
+    export_event_log(event_log, "export/sim_event_log_" + os.path.splitext("config.json")[0] + ".csv")
 
     # generate the enterprise log with occupations per iteration
     enterprise_log = generate_enterprise_log(sim_enterprise)
 
     # export the generated enterprise log for the simulation
-    export_enterprise_log(enterprise_log, "export/sim_enterprise_log.csv")
+    export_enterprise_log(enterprise_log, "export/sim_enterprise_log_" + os.path.splitext("config.json")[0] + ".csv")
 
     # generate DataFrame of station and resource parameters
     station_frame, resource_frame = generate_parameter_frame(sim_enterprise)
 
     # export generated parameter DataFrame
-    export_parameter_frames(station_frame, resource_frame, "export/stations.csv", "export/resources.csv")
+    export_parameter_frames(station_frame, resource_frame, "export/stations_" + os.path.splitext("config.json")[0] + ".csv", "export/resources_" + os.path.splitext("config.json")[0] + ".csv")
 
     print("Simulation and data export completed! Have fun with your simulated process data (■_■¬)")
