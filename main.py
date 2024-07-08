@@ -186,21 +186,27 @@ def simulate(sim_env):
                         order.stationStartWorkingTimes.append(sim_env.timeManager.simTime)
 
                     # record cycle times
-                    order.durationLog[order.stationPlan.index(order.currentStation)] += 1
+                    currentStationPlanIndices = [i for i, x in enumerate(order.stationPlan[:len(order.stationLog)]) if x == order.currentStation]
+                    currentStationLogIndices = [i for i, x in enumerate(order.stationLog) if x == order.currentStation]
+                    order.durationLog[currentStationPlanIndices[-1]] += 1
+                    # order.durationLog[order.stationPlan.index(order.currentStation)] += 1
                     # adjust station performance due to station usage - check if station has below zero performance
                     order.currentStation.performance -= np.random.uniform(0, sim_env.maxDegradationPerPeriod)
                     if order.currentStation.performance < 0:
                         order.currentStation.performance = 0
 
+                    # print(order.currentStationDuration)
+
                     # check if stations finish their task in this iteration
-                    if order.durationLog[order.stationLog.index(order.currentStation)] >= order.currentStationDuration:
+                    if order.durationLog[currentStationLogIndices[-1]] >= order.currentStationDuration:
 
                         # record mean performance at station
                         order.stationEndWorkingTimes.append(sim_env.timeManager.simTime)
                         workstart = order.stationStartWorkingTimes[-1]
                         workend = sim_env.timeManager.simTime
+
                         mean_performance = sum(
-                            order.currentStation.performanceLog[workstart:workend]) /(workend - workstart)
+                            order.currentStation.performanceLog[workstart:workend]) / (workend - workstart)
                         order.meanPerformanceLog.append(mean_performance)
 
                         # send order to idle pool waiting for the next station of the order
@@ -461,46 +467,44 @@ if __name__ == '__main__':
     # SIMULATION PARAMETERS #
     #########################
 
-    config_file="configs/config.json"
-    with open(config_file) as f:
+    config_file="initial.json"
+    with open("configs/" + config_file) as f:
         params = json.load(f)
 
     params["MAX_DEGRADATION_PER_PERIOD"] = 1/params["MAINTENANCE_INTERVAL"]
 
-    # number of different activities
-    STATION_COUNT = 10
-    # execution probabilities of activities
-    # STATION_PROBS = [1, 1, 0.8, 0.5, 1, 0.75, 0.8, 0.5, 1, 1]
-    STATION_PROBS = [[0.0, 0.8, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                     [0.0, 0.0, 0.9, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                     [0.0, 0.0, 0.0, 0.4, 0.3, 0.3, 0.0, 0.0, 0.0, 0.0],
-                     [0.0, 0.0, 0.0, 0.0, 0.3, 0.2, 0.4, 0.1, 0.0, 0.0],
-                     [0.0, 0.0, 0.0, 0.0, 0.0, 0.8, 0.2, 0.0, 0.0, 0.0],
-                     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.9, 0.1, 0.0, 0.0],
-                     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.0],
-                     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6, 0.4],
-                     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
-                     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
-    # duration baselines for each individual station in seconds
-    STATION_DURATIONS = [100, 200, 20, 60, 300, 500, 300, 100, 250, 60]
-    # shuffle the stations for each order after stations are planned?
-    SHUFFLE_STATIONS = False
-    # how often are stations maintained?
-    MAINTENANCE_INTERVAL = 60*60
-    # how fast are stations degrading due to usage - max performance is 1, i.e. 100%
-    MAX_DEGRADATION_PER_PERIOD = 1/MAINTENANCE_INTERVAL
-    # number of available resources to work at stations
-    RESOURCE_COUNT = 4
-    # productivities of different resources
-    RESOURCE_PRODUCTIVITIES = [0.75, 0.8, 0.8, 0.9, 1, 1, 1.2, 1.2, 1.5, 1.5]
-    # total simulation duration in seconds
-    SIM_DURATION = round(1 * 60 * 60 * 24)
-    # frequency of order generation per second, i.e. probability per second for generation of order
-    ORDER_FREQUENCY = 1/(60*10)  # one order every ten minutes
-    # number of order priorities
-    ORDER_PRIORITIES = 5
-    # loops in execution allowed? ---not implemented yet---
-    ALLOW_LOOPS = False
+    # # number of different activities
+    # STATION_COUNT = 10
+    # # execution probabilities of activities
+    # # STATION_PROBS = [1, 1, 0.8, 0.5, 1, 0.75, 0.8, 0.5, 1, 1]
+    # STATION_PROBS = [[0.0, 0.8, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                  [0.0, 0.0, 0.9, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                  [0.0, 0.0, 0.0, 0.4, 0.3, 0.3, 0.0, 0.0, 0.0, 0.0],
+    #                  [0.0, 0.0, 0.0, 0.0, 0.3, 0.2, 0.4, 0.1, 0.0, 0.0],
+    #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.8, 0.2, 0.0, 0.0, 0.0],
+    #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.9, 0.1, 0.0, 0.0],
+    #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.0],
+    #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6, 0.4],
+    #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+    #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
+    # # duration baselines for each individual station in seconds
+    # STATION_DURATIONS = [100, 200, 20, 60, 300, 500, 300, 100, 250, 60]
+    # # shuffle the stations for each order after stations are planned?
+    # SHUFFLE_STATIONS = False
+    # # how often are stations maintained?
+    # MAINTENANCE_INTERVAL = 60*60
+    # # how fast are stations degrading due to usage - max performance is 1, i.e. 100%
+    # MAX_DEGRADATION_PER_PERIOD = 1/MAINTENANCE_INTERVAL
+    # # number of available resources to work at stations
+    # RESOURCE_COUNT = 4
+    # # productivities of different resources
+    # RESOURCE_PRODUCTIVITIES = [0.75, 0.8, 0.8, 0.9, 1, 1, 1.2, 1.2, 1.5, 1.5]
+    # # total simulation duration in seconds
+    # SIM_DURATION = round(1 * 60 * 60 * 24)
+    # # frequency of order generation per second, i.e. probability per second for generation of order
+    # ORDER_FREQUENCY = 1/(60*10)  # one order every ten minutes
+    # # number of order priorities
+    # ORDER_PRIORITIES = 5
 
     #########################
     #########################
@@ -528,19 +532,22 @@ if __name__ == '__main__':
     # generate an event log from the simulated enterprise data
     event_log = generate_event_log(sim_enterprise)
 
+    if not os.path.exists("export/" + os.path.splitext(config_file)[0]):
+        os.mkdir("export/" + os.path.splitext(config_file)[0])
+
     # export the generated event log for the simulation
-    export_event_log(event_log, "export/sim_event_log_" + os.path.splitext("config.json")[0] + ".csv")
+    export_event_log(event_log, "export/" + os.path.splitext(config_file)[0] + "/sim_event_log_" + os.path.splitext(config_file)[0] + ".csv")
 
     # generate the enterprise log with occupations per iteration
     enterprise_log = generate_enterprise_log(sim_enterprise)
 
     # export the generated enterprise log for the simulation
-    export_enterprise_log(enterprise_log, "export/sim_enterprise_log_" + os.path.splitext("config.json")[0] + ".csv")
+    export_enterprise_log(enterprise_log, "export/" + os.path.splitext(config_file)[0] + "/sim_enterprise_log_" + os.path.splitext(config_file)[0] + ".csv")
 
     # generate DataFrame of station and resource parameters
     station_frame, resource_frame = generate_parameter_frame(sim_enterprise)
 
     # export generated parameter DataFrame
-    export_parameter_frames(station_frame, resource_frame, "export/stations_" + os.path.splitext("config.json")[0] + ".csv", "export/resources_" + os.path.splitext("config.json")[0] + ".csv")
+    export_parameter_frames(station_frame, resource_frame, "export/" + os.path.splitext(config_file)[0] + "/stations_" + os.path.splitext(config_file)[0] + ".csv", "export/" + os.path.splitext(config_file)[0] + "/resources_" + os.path.splitext(config_file)[0] + ".csv")
 
     print("Simulation and data export completed! Have fun with your simulated process data (■_■¬)")
