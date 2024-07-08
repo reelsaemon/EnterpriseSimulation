@@ -444,20 +444,20 @@ def generate_parameter_frame(simulated_enterprise):
 
 def export_event_log(log, filename):
     print("Exporting event log...", end='')
-    log.to_csv(filename, index=False, sep=';')
+    log.to_csv(filename, index=False, sep=',')
     print("done!")
     return
 
 def export_enterprise_log(log, filename):
     print("Exporting enterprise log...", end='')
-    log.to_csv(filename, index=False, sep=';')
+    log.to_csv(filename, index=False, sep=',')
     print("done!")
     return
 
 def export_parameter_frames(station_log, resource_log, station_filename, resource_filename):
     print("Exporting enterprise parameters...", end='')
-    station_log.to_csv(station_filename, index=False, sep=';')
-    resource_log.to_csv(resource_filename, index=False, sep=';')
+    station_log.to_csv(station_filename, index=False, sep=',')
+    resource_log.to_csv(resource_filename, index=False, sep=',')
     print("done!")
     return
 
