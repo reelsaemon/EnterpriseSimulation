@@ -160,10 +160,12 @@ def simulate(sim_env):
 
                 if order.idle is True:
                     # record waiting times (in front of stations)
-                    order.waitingTimeLog[order.stationPlan.index(order.getNextStation())] += 1
+                    currentStationPlanIndices = [i for i, x in enumerate(order.stationPlan[:(len(order.stationLog)+1)]) if x == order.getNextStation()]
+                    order.waitingTimeLog[currentStationPlanIndices[-1]] += 1
                 elif order.idleAtStation is True:
                     # record waiting times at stations
-                    order.waitingTimeAtStationLog[order.stationPlan.index(order.currentStation)] += 1
+                    currentStationPlanIndices = [i for i, x in enumerate(order.stationPlan[:len(order.stationLog)]) if x == order.currentStation]
+                    order.waitingTimeAtStationLog[currentStationPlanIndices[-1]] += 1
                 elif order.idle is False \
                         and order.idleAtStation is False \
                         and order.orderComplete is False:
@@ -467,7 +469,7 @@ if __name__ == '__main__':
     # SIMULATION PARAMETERS #
     #########################
 
-    config_file="initial.json"
+    config_file="loop_test.json"
     with open("configs/" + config_file) as f:
         params = json.load(f)
 

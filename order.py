@@ -33,7 +33,9 @@ class Order:
         if len(self.stationLog) == 0:
             return self.stationPlan[0]
         else:
-            return self.stationPlan[self.stationPlan.index(self.stationLog[-1]) + 1]
+            # return self.stationPlan[self.stationPlan.index(self.stationLog[-1]) + 1]
+            currentCurrentStationIndices = [i for i, x in enumerate(self.stationPlan[:len(self.stationLog)]) if x == self.stationLog[-1]]
+            return self.stationPlan[currentCurrentStationIndices[-1] + 1]
 
     def setResource(self, resource):
         self.resourceLog.append(resource)
