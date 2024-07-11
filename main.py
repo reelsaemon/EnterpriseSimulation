@@ -372,24 +372,25 @@ def generate_event_log(simulated_enterprise):
     print("done!")
     return event_log_frame
 
-def generate_enterprise_log(simulated_enterprise):
+def generate_enterprise_log(simulated_enterprise, relevant_indices):
     print("Generating enterprise log...", end='')
 
     # form enterprise log
     # fill the columns for the data frame
     start_time = datetime.timestamp(datetime(2020, 1, 1, 0, 0, 0, 0))
     timestamp_col = [datetime.fromtimestamp(start_time + iteration) for iteration in range(0, simulated_enterprise.timeManager.simDuration)]
-    stations_available_col = simulated_enterprise.stationsAvailable
-    resources_available_col = simulated_enterprise.resourcesAvailable
-    existing_orders_col = simulated_enterprise.existingOrders
+    timestamp_col = [timestamp_col[index] for index in relevant_indices]
+    stations_available_col = [simulated_enterprise.stationsAvailable[index] for index in relevant_indices]
+    resources_available_col = [simulated_enterprise.resourcesAvailable[index] for index in relevant_indices]
+    existing_orders_col = [simulated_enterprise.existingOrders[index] for index in relevant_indices]
 
     station_dict = {}
     for station in simulated_enterprise.stations:
-        station_dict[station.stationName] = station.availabilityLog
+        station_dict[station.stationName] = [station.availabilityLog[index] for index in relevant_indices]
 
     resource_dict = {}
     for resource in simulated_enterprise.resources:
-        resource_dict[resource.resourceName] = resource.availabilityLog
+        resource_dict[resource.resourceName] = [resource.availabilityLog[index] for index in relevant_indices]
 
     # make DataFrame from all columns
     enterprise_log_frame = pd.DataFrame([timestamp_col,
@@ -469,87 +470,111 @@ if __name__ == '__main__':
     # SIMULATION PARAMETERS #
     #########################
 
-    config_file="loop_test.json"
-    with open("configs/" + config_file) as f:
-        params = json.load(f)
+    config_files = os.listdir("configs/")
 
-    params["MAX_DEGRADATION_PER_PERIOD"] = 1/params["MAINTENANCE_INTERVAL"]
+    for config_file in config_files:
 
-    # # number of different activities
-    # STATION_COUNT = 10
-    # # execution probabilities of activities
-    # # STATION_PROBS = [1, 1, 0.8, 0.5, 1, 0.75, 0.8, 0.5, 1, 1]
-    # STATION_PROBS = [[0.0, 0.8, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-    #                  [0.0, 0.0, 0.9, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-    #                  [0.0, 0.0, 0.0, 0.4, 0.3, 0.3, 0.0, 0.0, 0.0, 0.0],
-    #                  [0.0, 0.0, 0.0, 0.0, 0.3, 0.2, 0.4, 0.1, 0.0, 0.0],
-    #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.8, 0.2, 0.0, 0.0, 0.0],
-    #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.9, 0.1, 0.0, 0.0],
-    #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.0],
-    #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6, 0.4],
-    #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
-    #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
-    # # duration baselines for each individual station in seconds
-    # STATION_DURATIONS = [100, 200, 20, 60, 300, 500, 300, 100, 250, 60]
-    # # shuffle the stations for each order after stations are planned?
-    # SHUFFLE_STATIONS = False
-    # # how often are stations maintained?
-    # MAINTENANCE_INTERVAL = 60*60
-    # # how fast are stations degrading due to usage - max performance is 1, i.e. 100%
-    # MAX_DEGRADATION_PER_PERIOD = 1/MAINTENANCE_INTERVAL
-    # # number of available resources to work at stations
-    # RESOURCE_COUNT = 4
-    # # productivities of different resources
-    # RESOURCE_PRODUCTIVITIES = [0.75, 0.8, 0.8, 0.9, 1, 1, 1.2, 1.2, 1.5, 1.5]
-    # # total simulation duration in seconds
-    # SIM_DURATION = round(1 * 60 * 60 * 24)
-    # # frequency of order generation per second, i.e. probability per second for generation of order
-    # ORDER_FREQUENCY = 1/(60*10)  # one order every ten minutes
-    # # number of order priorities
-    # ORDER_PRIORITIES = 5
+        # config_file="500_stations_UNIFORM_UPPER_TRIANGLE.json"
+        with open("configs/" + config_file) as f:
+            params = json.load(f)
 
-    #########################
-    #########################
-    #########################
+        params["MAX_DEGRADATION_PER_PERIOD"] = 1/params["MAINTENANCE_INTERVAL"]
 
-    # initializing the enterprise for the simulation
-    sim_enterprise = enterprise.Enterprise(enterprise_name="Enterprise",
-                                           n_stations=params["STATION_COUNT"],
-                                           station_names=range(0, params["STATION_COUNT"]),
-                                           station_probs=params["STATION_PROBS"],
-                                           station_durations=params["STATION_DURATIONS"],
-                                           shuffle_stations=params["SHUFFLE_STATIONS"],
-                                           maintenance_interval=params["MAINTENANCE_INTERVAL"],
-                                           max_degradation_per_period=params["MAX_DEGRADATION_PER_PERIOD"],
-                                           n_resources=params["RESOURCE_COUNT"],
-                                           resource_names=range(0, params["RESOURCE_COUNT"]),
-                                           resource_productivities=params["RESOURCE_PRODUCTIVITIES"],
-                                           sim_duration=params["SIM_DURATION"],
-                                           order_freq=params["ORDER_FREQUENCY"],
-                                           order_priorities=params["ORDER_PRIORITIES"])
+        # # number of different activities
+        # STATION_COUNT = 10
+        # # execution probabilities of activities
+        # # STATION_PROBS = [1, 1, 0.8, 0.5, 1, 0.75, 0.8, 0.5, 1, 1]
+        # STATION_PROBS = [[0.0, 0.8, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        #                  [0.0, 0.0, 0.9, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        #                  [0.0, 0.0, 0.0, 0.4, 0.3, 0.3, 0.0, 0.0, 0.0, 0.0],
+        #                  [0.0, 0.0, 0.0, 0.0, 0.3, 0.2, 0.4, 0.1, 0.0, 0.0],
+        #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.8, 0.2, 0.0, 0.0, 0.0],
+        #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.9, 0.1, 0.0, 0.0],
+        #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.0],
+        #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6, 0.4],
+        #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+        #                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
+        # # duration baselines for each individual station in seconds
+        # STATION_DURATIONS = [100, 200, 20, 60, 300, 500, 300, 100, 250, 60]
+        # # shuffle the stations for each order after stations are planned?
+        # SHUFFLE_STATIONS = False
+        # # how often are stations maintained?
+        # MAINTENANCE_INTERVAL = 60*60
+        # # how fast are stations degrading due to usage - max performance is 1, i.e. 100%
+        # MAX_DEGRADATION_PER_PERIOD = 1/MAINTENANCE_INTERVAL
+        # # number of available resources to work at stations
+        # RESOURCE_COUNT = 4
+        # # productivities of different resources
+        # RESOURCE_PRODUCTIVITIES = [0.75, 0.8, 0.8, 0.9, 1, 1, 1.2, 1.2, 1.5, 1.5]
+        # # total simulation duration in seconds
+        # SIM_DURATION = round(1 * 60 * 60 * 24)
+        # # frequency of order generation per second, i.e. probability per second for generation of order
+        # ORDER_FREQUENCY = 1/(60*10)  # one order every ten minutes
+        # # number of order priorities
+        # ORDER_PRIORITIES = 5
 
-    # run the simulation in the generated enterprise
-    simulate(sim_enterprise)
+        #########################
+        #########################
+        #########################
 
-    # generate an event log from the simulated enterprise data
-    event_log = generate_event_log(sim_enterprise)
+        # # initializing the enterprise for the simulation
+        # sim_enterprise = enterprise.Enterprise(enterprise_name="Enterprise",
+        #                                        n_stations=params["STATION_COUNT"],
+        #                                        station_names=range(0, params["STATION_COUNT"]),
+        #                                        station_probs=params["STATION_PROBS"],
+        #                                        station_durations=params["STATION_DURATIONS"],
+        #                                        shuffle_stations=params["SHUFFLE_STATIONS"],
+        #                                        maintenance_interval=params["MAINTENANCE_INTERVAL"],
+        #                                        max_degradation_per_period=params["MAX_DEGRADATION_PER_PERIOD"],
+        #                                        n_resources=params["RESOURCE_COUNT"],
+        #                                        resource_names=range(0, params["RESOURCE_COUNT"]),
+        #                                        resource_productivities=params["RESOURCE_PRODUCTIVITIES"],
+        #                                        sim_duration=params["SIM_DURATION"],
+        #                                        order_freq=params["ORDER_FREQUENCY"],
+        #                                        order_priorities=params["ORDER_PRIORITIES"])
+        
+        # ensuring log completion (focus on control flow)
+        sim_enterprise = enterprise.Enterprise(enterprise_name="Enterprise",
+                                            n_stations=params["STATION_COUNT"],
+                                            station_names=range(0, params["STATION_COUNT"]),
+                                            station_probs=params["STATION_PROBS"],
+                                            station_durations=[150 for i in range(0, params["STATION_COUNT"])],
+                                            shuffle_stations=params["SHUFFLE_STATIONS"],
+                                            maintenance_interval=params["MAINTENANCE_INTERVAL"],
+                                            max_degradation_per_period=params["MAX_DEGRADATION_PER_PERIOD"],
+                                            n_resources=params["STATION_COUNT"],
+                                            resource_names=range(0, params["STATION_COUNT"]),
+                                            resource_productivities=[1 for i in range(0, params["STATION_COUNT"])],
+                                            sim_duration=params["SIM_DURATION"],
+                                            order_freq=params["ORDER_FREQUENCY"],
+                                            order_priorities=params["ORDER_PRIORITIES"])
 
-    if not os.path.exists("export/" + os.path.splitext(config_file)[0]):
-        os.mkdir("export/" + os.path.splitext(config_file)[0])
 
-    # export the generated event log for the simulation
-    export_event_log(event_log, "export/" + os.path.splitext(config_file)[0] + "/sim_event_log_" + os.path.splitext(config_file)[0] + ".csv")
+        # run the simulation in the generated enterprise
+        simulate(sim_enterprise)
 
-    # generate the enterprise log with occupations per iteration
-    enterprise_log = generate_enterprise_log(sim_enterprise)
+        # generate an event log from the simulated enterprise data
+        event_log = generate_event_log(sim_enterprise)
 
-    # export the generated enterprise log for the simulation
-    export_enterprise_log(enterprise_log, "export/" + os.path.splitext(config_file)[0] + "/sim_enterprise_log_" + os.path.splitext(config_file)[0] + ".csv")
+        if not os.path.exists("export/" + os.path.splitext(config_file)[0]):
+            os.mkdir("export/" + os.path.splitext(config_file)[0])
 
-    # generate DataFrame of station and resource parameters
-    station_frame, resource_frame = generate_parameter_frame(sim_enterprise)
+        # export the generated event log for the simulation
+        export_event_log(event_log, "export/" + os.path.splitext(config_file)[0] + "/sim_event_log_" + os.path.splitext(config_file)[0] + ".csv")
 
-    # export generated parameter DataFrame
-    export_parameter_frames(station_frame, resource_frame, "export/" + os.path.splitext(config_file)[0] + "/stations_" + os.path.splitext(config_file)[0] + ".csv", "export/" + os.path.splitext(config_file)[0] + "/resources_" + os.path.splitext(config_file)[0] + ".csv")
+        all_event_timestamps = event_log["timestamp_in"].to_list() + event_log["timestamp_at_station"].to_list() + event_log["timestamp_start_work"].to_list() + event_log["timestamp_out"].to_list()
+        relevant_indices = [i for i, x in enumerate(pd.Series([datetime.fromtimestamp(datetime.timestamp(datetime(2020, 1, 1, 0, 0, 0, 0)) + iteration) for iteration in range(0, sim_enterprise.timeManager.simDuration)]).isin(set(all_event_timestamps)).to_list()) if x]
 
-    print("Simulation and data export completed! Have fun with your simulated process data (■_■¬)")
+        # generate the enterprise log with occupations per iteration
+        enterprise_log = generate_enterprise_log(sim_enterprise, relevant_indices)
+
+        # export the generated enterprise log for the simulation
+        export_enterprise_log(enterprise_log, "export/" + os.path.splitext(config_file)[0] + "/sim_enterprise_log_" + os.path.splitext(config_file)[0] + ".csv")
+
+        # generate DataFrame of station and resource parameters
+        station_frame, resource_frame = generate_parameter_frame(sim_enterprise)
+
+        # export generated parameter DataFrame
+        export_parameter_frames(station_frame, resource_frame, "export/" + os.path.splitext(config_file)[0] + "/stations_" + os.path.splitext(config_file)[0] + ".csv", "export/" + os.path.splitext(config_file)[0] + "/resources_" + os.path.splitext(config_file)[0] + ".csv")
+
+        print("Simulation and data export completed! Have fun with your simulated process data (■_■¬)")
